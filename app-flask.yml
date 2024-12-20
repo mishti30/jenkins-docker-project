@@ -1,0 +1,18 @@
+version: '3.5'
+services:
+    web:
+        build: .
+        ports:
+            - "5000:5000"
+        volumes:
+            - myvol:/code
+        depends_on:
+            - redis
+    redis:
+        image: redis
+        volumes:
+            - datavol:/data
+
+volumes:
+    myvol:
+    datavol:
