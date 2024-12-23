@@ -3,35 +3,29 @@ pipeline {
         label 'agent1'
     }
     
-    Enviorments {
-        REPO_CREDS = credentials('docker-repo-creds')
-        IMAGE_NAME = $REPO_CREDS_USR/jenkinsapp
-        TAGS = $GIT_COMMIT
-    }
-
     stages {
         stage('scm checkout') {
             steps {
-             sh git branch: 'main', credentialsId: 'Bitbucket', url: 'git@github.com:mishti30/jenkins-docker-project.git'
+              git url:"https://github.com/mishti30/jenkins-docker-project.git", branch: "main"
             }
         }
 
         stage('create Image') {
             steps {
-                sh "docker image statement"
+                sh "docker build -t jenkinsapp:latest ."
             }
         }
 
         stage('Image push to Repo '){
             steps {
-                sh comment 
+                withCredentials([usernamePassword(credentialsId: 'docker-repo-creds', usernameVariable: 'docker_user', passwordVariable: 'docker_pass')]) {
+                sh "docker tag jenkinsapp ${env.docker_user}/jenkinsapp:latest"
+                sh "docker login -u ${env.docker_user} -p ${env.docker_pass}"
+                sh "docker push ${env.docker_user}/jenkinsapp:latest"
+                }
             }
         }
-
-        stage('build container'){
-            steps{
-                sh 'comment'
-            }
-        }
+        
     }
+    
 }
