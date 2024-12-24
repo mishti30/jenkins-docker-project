@@ -7,6 +7,10 @@ pipeline {
 
         string(name: 'ImageName', defaultValue: 'jenkinsapp', description: 'Enter Image Name')
 
+        string(name: 'ContainerName', defaultValue: 'test-main-app', description: 'Enter Container Name')
+        
+        string(name: 'ContainerPort', defaultValue: '5000', description: 'Enter Container Expose Port')
+
     }
     stages {
         stage('scm checkout') {
@@ -28,6 +32,12 @@ pipeline {
                 sh "docker login -u ${env.docker_user} -p ${env.docker_pass}"
                 sh "docker push ${env.docker_user}/${params.ImageName}:latest"
                 }
+            }
+        }
+
+        stage('Build Container'){
+            steps {
+                sh "docker run -dit --name ${params.ContainerName} -p ${params.ContainerPort}:5000 prateekkumawat/${params.ImageName}:latest"
             }
         }
         
