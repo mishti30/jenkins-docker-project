@@ -3,7 +3,7 @@ pipeline {
         label 'agent1'
     }
     parameters {
-        string(name: 'GitBranch', choices: ['main', 'dev', 'test'], description: 'please select your Branch')
+        choice(name: 'GitBranch', choices: ['main', 'dev', 'test'], description: 'please select your Branch')
 
         string(name: 'ImageName', defaultValue: 'jenkinsapp', description: 'Enter Image Name')
 
