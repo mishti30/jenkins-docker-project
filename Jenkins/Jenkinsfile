@@ -2,26 +2,31 @@ pipeline {
     agent {
         label 'agent1'
     }
-    
+    parameters {
+        string(name: 'GitBranch', choices: ['main', 'dev', 'test'], description: 'please select your Branch')
+
+        string(name: 'ImageName', defaultValue: 'jenkinsapp', description: 'Enter Image Name')
+
+    }
     stages {
         stage('scm checkout') {
             steps {
-              git url:"https://github.com/mishti30/jenkins-docker-project.git", branch: "main"
+              git url:"https://github.com/mishti30/jenkins-docker-project.git", branch: "${params.GitBranch}"
             }
         }
 
         stage('create Image') {
             steps {
-                sh "docker build -t jenkinsapp:latest ."
+                sh "docker build -t ${params.ImageName}:latest ."
             }
         }
 
         stage('Image push to Repo '){
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-repo-creds', usernameVariable: 'docker_user', passwordVariable: 'docker_pass')]) {
-                sh "docker tag jenkinsapp ${env.docker_user}/jenkinsapp:latest"
+                sh "docker tag ${params.ImageName} ${env.docker_user}/${params.ImageName}:latest"
                 sh "docker login -u ${env.docker_user} -p ${env.docker_pass}"
-                sh "docker push ${env.docker_user}/jenkinsapp:latest"
+                sh "docker push ${env.docker_user}/${params.ImageName}:latest"
                 }
             }
         }
