@@ -75,9 +75,7 @@ pipeline {
         }
         stage("ImageScan") {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-repo-creds', usernameVariable: 'docker_user', passwordVariable: 'docker_pass')]) {
-                sh 'trivy image ${env.docker_user}/frontend_project:${BUILD_NUMBER} > trivyimage.txt' 
-                }
+                sh 'trivy prateekkumawat/frontend_project:${BUILD_NUMBER} > trivyimage.txt' 
             }
         }
 
