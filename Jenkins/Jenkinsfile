@@ -17,7 +17,7 @@ pipeline {
         }
         stage('Checkout from Git') {
             steps {
-                git credentialsId: 'git-token-pam', url: 'https://github.com/mishti30/jenkins-docker-project.git, branch: "dev"'
+                git credentialsId: 'git-token-pam', url: 'https://github.com/mishti30/jenkins-docker-project.git,branch:"dev"'
             }
         }
         stage('Sonarqube Analysis') {
