@@ -1,0 +1,86 @@
+pipeline {
+    agent {
+        labels 'agent1'
+    }
+    tools {
+        jdk 'jdk'
+        nodejs 'nodejs'
+    }
+    environment  {
+        SCANNER_HOME=tool 'sonar-scanner'
+    }
+    stages {
+        stage('Cleaning Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+        stage('Checkout from Git') {
+            steps {
+                git credentialsId: 'git-token-pam', url: 'https://github.com/mishti30/jenkins-docker-project.git, branch: "dev"'
+            }
+        }
+        stage('Sonarqube Analysis') {
+            steps {
+                dir('src/frontend') {
+                    withSonarQubeEnv('sonar-server') {
+                        sh ''' $SCANNER_HOME/bin/sonar-scanner \
+                        -Dsonar.projectName=jenkins-docker-project \
+                        -Dsonar.projectKey=jenkins-docker-project '''
+                    }
+                }
+            }
+        }
+        stage('QualityGate') {
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token' 
+                }
+            }
+        }
+        stage('OWASP Scan') {
+            steps {
+                dir('src/frontend') {
+                    dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+                    dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                }
+            }
+        }
+        stage('TrivyFScan') {
+            steps {
+                dir('src/frontend') {
+                    sh 'trivy fs . > trivyfs.txt'
+                }
+            }
+        }
+        stage("Image Create") {
+            steps {
+                script {
+                    dir('src/frontend') {
+                            sh 'docker build -t frontend_project .'
+                    }
+                }
+            }
+        }
+        stage("ImagePush") {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker-repo-creds', usernameVariable: 'docker_user', passwordVariable: 'docker_pass')]) {
+                    sh "docker tag frontend_project ${env.docker_user}/frontend_project:${BUILD_NUMBER}"
+                    sh "docker login -u ${env.docker_user} -p ${env.docker_pass}"
+                    sh "docker push ${env.docker_user}/frontend_project:${BUILD_NUMBER}"
+                    }
+                }
+            }
+        }
+        stage("ImageScan") {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-repo-creds', usernameVariable: 'docker_user', passwordVariable: 'docker_pass')]) {
+                sh 'trivy image ${env.docker_user}/frontend_project:${BUILD_NUMBER} > trivyimage.txt' 
+                }
+            }
+        }
+
+        
+    }
+}
