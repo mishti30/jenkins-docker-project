@@ -77,5 +77,11 @@ pipeline {
                 sh 'trivy image prateekkumawat/neogym:${BUILD_NUMBER} > trivyimage_${BUILD_NUMBER}.txt' 
             }
         }
+        stage("ImageDepoy") { 
+            steps { 
+                sh 'docker run -dit --name finexo -p 8082:80  prateekkumawat/neogym:${BUILD_NUMBER}'
+            }
+        }
+    
     }
 }
