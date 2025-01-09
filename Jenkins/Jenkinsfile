@@ -75,10 +75,8 @@ pipeline {
         }
         stage("ImageScan") {
             steps {
-                sh 'trivy prateekkumawat/frontend_project:${BUILD_NUMBER} > trivyimage.txt' 
+                sh 'trivy image prateekkumawat/frontend_project:${BUILD_NUMBER} > trivyimage_${BUILD_NUMBER}.txt' 
             }
         }
-
-        
     }
 }
