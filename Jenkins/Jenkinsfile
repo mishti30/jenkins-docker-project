@@ -67,9 +67,9 @@ pipeline {
                 }
             }
         }
-        stage("ImageScan") {
+        stage("terraform apply") {
             steps {
-                dir('terraform apply') {
+                dir('terrafom') {
                     sh 'terraform apply --auto-approve'     
                 }
             }
