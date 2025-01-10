@@ -2,13 +2,77 @@ pipeline {
     agent {
         label 'agent1'
     }
+    environment  {
+        SCANNER_HOME=tool 'sonar-scanner'
+    }
     stages {
-        stage(' sonarcube infra') {
+        stage('Cleaning Workspace') {
             steps {
-                sh "docker run -d --name sonar -p 9000:9000 sonarqube:lts-community"
+                cleanWs()
             }
         }
-        
+        stage('Checkout from Git') {
+            steps {
+                git credentialsId:'git-token-pam',url:'https://github.com/mishti30/jenkins-docker-project.git',branch:'terraform-infra'
+            }
+        }
+        stage('Sonarqube Analysis') {
+            steps {
+                dir('terraform') {
+                    withSonarQubeEnv('sonar-server') {
+                        sh ''' $SCANNER_HOME/bin/sonar-scanner \
+                        -Dsonar.projectName=jenkins-terraform-project \
+                        -Dsonar.projectKey=jenkins-terraform-project '''
+                    }
+                }
+            }
+        }
+        stage('QualityGate') {
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token' 
+                }
+            }
+        }
+        stage('OWASP Scan') {
+            steps {
+                dir('terraform/') {
+                    dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-check'
+                    dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                }
+            }
+        }
+        stage('TrivyFScan') {
+            steps {
+                dir('terraform') {
+                    sh 'trivy fs . > trivyfs.txt'
+                }
+            }
+        }
+        stage("Terraform Init") {
+            steps {
+                script {
+                    dir('terraform') {
+                        sh 'terraform init'     
+                    }
+                }
+            }
+        }
+        stage("Terraform plan") {
+            steps {
+                script {
+                   dir('terraform') {
+                        sh 'terraform plan'     
+                    }
+                }
+            }
+        }
+        stage("ImageScan") {
+            steps {
+                dir('terraform apply') {
+                    sh 'terraform apply --auto-approve'     
+                }
+            }
+        }
     }
-    
 }
